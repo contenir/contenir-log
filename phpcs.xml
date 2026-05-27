@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<ruleset name="contenir/contenir-log">
+    <rule ref="./vendor/laminas/laminas-coding-standard/src/LaminasCodingStandard/ruleset.xml"/>
+
+    <arg name="colors"/>
+    <arg value="p"/>
+
+    <file>src</file>
+    <file>tests</file>
+</ruleset>
