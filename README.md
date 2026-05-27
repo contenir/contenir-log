@@ -20,7 +20,7 @@ composer require contenir/contenir-log
 
 ## Configure
 
-Override the `contenir_log` config key:
+Override the `log` config key:
 
 ```php
 return [
@@ -63,6 +63,14 @@ Pull `Contenir\Log\Logger` from the container (it's a `Psr\Log\LoggerInterface`)
 ```php
 $logger->error('HTTP 500 at {uri}', ['uri' => $uri, 'exception' => $e]);
 ```
+
+`{uri}` is a PSR-3 placeholder: any `{key}` in the message is replaced by the
+matching `context` entry, so the line above is recorded as `HTTP 500 at /checkout`.
+
+`exception` is special-cased — it is **not** interpolated into the message.
+A `Throwable` passed there has its message chain and full stack trace captured
+separately (the `error` column, or a multi-line block in the file backend),
+keeping the message clean while preserving everything needed to debug.
 
 `priority` / `priorityName` follow Laminas\Log's numeric scheme, so existing log
 tables built for it remain compatible.

@@ -11,9 +11,9 @@ namespace Contenir\Log;
  * {@see Module} re-maps the same factories under `service_manager`. Both share
  * the `log` defaults below; override them in your application config.
  *
- * `log.storage.adapter` is resolved straight through the container, so the
- * built-in `db` / `filesystem` aliases (below) or any service id implementing
- * StorageInterface may be named.
+ * `log.storage.adapter` is a service id resolved through the container — name a
+ * StorageInterface FQCN (the two shipped ones, or your own). The `db` and
+ * `filesystem` aliases below are shorthands for the two bundled backends.
  */
 final class ConfigProvider
 {

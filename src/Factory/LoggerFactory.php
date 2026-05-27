@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Contenir\Log\Factory;
 
 use Contenir\Log\Logger;
+use Contenir\Log\Storage\FilesystemStorage;
 use Contenir\Log\Storage\StorageInterface;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
@@ -16,7 +17,7 @@ final class LoggerFactory
     public function __invoke(ContainerInterface $container): Logger
     {
         $config  = $container->has('config') ? (array) $container->get('config') : [];
-        $adapter = (string) ($config['log']['storage']['adapter'] ?? 'filesystem');
+        $adapter = (string) ($config['log']['storage']['adapter'] ?? FilesystemStorage::class);
 
         $storage = $container->get($adapter);
         if (! $storage instanceof StorageInterface) {
