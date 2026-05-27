@@ -11,9 +11,9 @@ final class FilesystemStorageFactory
 {
     public function __invoke(ContainerInterface $container): FilesystemStorage
     {
-        $config = $container->has('config') ? (array) $container->get('config') : [];
-        $fs     = (array) ($config['contenir_log']['filesystem'] ?? []);
-        $path   = (string) ($fs['path'] ?? 'data/log/app.log');
+        $config  = $container->has('config') ? (array) $container->get('config') : [];
+        $options = (array) ($config['log']['storage']['options'] ?? []);
+        $path    = (string) ($options['path'] ?? 'data/log/app.log');
 
         return new FilesystemStorage($path);
     }

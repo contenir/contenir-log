@@ -24,29 +24,37 @@ Override the `contenir_log` config key:
 
 ```php
 return [
-    'contenir_log' => [
-        // 'filesystem' (default) or 'db'
-        'storage'    => 'db',
+    'log' => [
+        'storage' => [
+            // 'filesystem' (default) or 'db' — both are registered aliases.
+            // You can also name any service id implementing StorageInterface.
+            'adapter' => 'db',
 
-        'filesystem' => [
-            'path' => 'data/log/app.log',
-        ],
+            // Options for the chosen adapter:
+            'options' => [
+                // db:
+                'adapter' => Laminas\Db\Adapter\Adapter::class, // db adapter service id
+                'table'   => 'log',
+                // LogRecord field => table column (only mapped fields are written;
+                // a createdAt column with a DB default can be left out).
+                'columns' => [
+                    'message'      => 'message',
+                    'error'        => 'error',
+                    'priority'     => 'priority',
+                    'priorityName' => 'priorityName',
+                ],
 
-        'db' => [
-            'adapter' => Laminas\Db\Adapter\Adapter::class, // adapter service id
-            'table'   => 'log',
-            // LogRecord field => table column (only mapped fields are written;
-            // a createdAt column with a DB default can be left out).
-            'columns' => [
-                'message'      => 'message',
-                'error'        => 'error',
-                'priority'     => 'priority',
-                'priorityName' => 'priorityName',
+                // filesystem:
+                // 'path' => 'data/log/app.log',
             ],
         ],
     ],
 ];
 ```
+
+`adapter` is resolved through the container, so `'db'` / `'filesystem'` use the
+package's aliases, and you can register your own `StorageInterface` and name its
+service id here instead.
 
 ## Use
 

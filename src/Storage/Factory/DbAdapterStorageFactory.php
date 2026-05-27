@@ -17,10 +17,10 @@ final class DbAdapterStorageFactory
 {
     public function __invoke(ContainerInterface $container): DbAdapterStorage
     {
-        $config = $container->has('config') ? (array) $container->get('config') : [];
-        $db     = (array) ($config['contenir_log']['db'] ?? []);
+        $config  = $container->has('config') ? (array) $container->get('config') : [];
+        $options = (array) ($config['log']['storage']['options'] ?? []);
 
-        $adapterService = (string) ($db['adapter'] ?? Adapter::class);
+        $adapterService = (string) ($options['adapter'] ?? Adapter::class);
         $adapter        = $container->get($adapterService);
         if (! $adapter instanceof AdapterInterface) {
             throw new RuntimeException(sprintf(
@@ -30,8 +30,8 @@ final class DbAdapterStorageFactory
             ));
         }
 
-        $table   = (string) ($db['table'] ?? 'log');
-        $columns = is_array($db['columns'] ?? null) ? $db['columns'] : DbAdapterStorage::DEFAULT_COLUMNS;
+        $table   = (string) ($options['table'] ?? 'log');
+        $columns = is_array($options['columns'] ?? null) ? $options['columns'] : DbAdapterStorage::DEFAULT_COLUMNS;
 
         return new DbAdapterStorage($adapter, $table, $columns);
     }

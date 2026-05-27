@@ -20,7 +20,7 @@ final class Module
 
         return [
             'service_manager' => $provider->getDependencies(),
-            'contenir_log'    => $provider->getDefaults(),
+            'log'             => $provider->getDefaults(),
         ];
     }
 }
