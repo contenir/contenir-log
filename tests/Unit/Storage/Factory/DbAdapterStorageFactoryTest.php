@@ -57,4 +57,24 @@ final class DbAdapterStorageFactoryTest extends TestCase
         $this->expectException(RuntimeException::class);
         (new DbAdapterStorageFactory())($container);
     }
+
+    public function testThrowsWhenColumnMapIsNotStringToString(): void
+    {
+        $container = new ArrayContainer([
+            'config'     => [
+                'log' => [
+                    'storage' => [
+                        'options' => [
+                            'adapter' => 'db.adapter',
+                            'columns' => ['message' => ['nested']],
+                        ],
+                    ],
+                ],
+            ],
+            'db.adapter' => $this->createMock(AdapterInterface::class),
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        (new DbAdapterStorageFactory())($container);
+    }
 }

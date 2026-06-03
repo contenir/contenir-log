@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Contenir\Log\Tests\TestAsset;
 
 use Laminas\Db\Adapter\Adapter;
+use Laminas\Db\ResultSet\ResultSetInterface;
 
-use function array_map;
-use function iterator_to_array;
+use function is_scalar;
 
 /**
  * Builds a throwaway in-memory SQLite adapter for exercising DbAdapterStorage
@@ -44,15 +44,24 @@ final class SqliteLogDatabase
     }
 
     /**
-     * @return list<array<string, mixed>>
+     * @return list<array<string, scalar|null>>
      */
     public static function rows(Adapter $adapter, string $table = 'log'): array
     {
         $result = $adapter->query('SELECT * FROM ' . $table . ' ORDER BY 1', Adapter::QUERY_MODE_EXECUTE);
 
-        return array_map(
-            static fn ($row): array => (array) $row,
-            iterator_to_array($result),
-        );
+        $rows = [];
+        if ($result instanceof ResultSetInterface) {
+            foreach ($result as $row) {
+                $cells = [];
+                foreach ((array) $row as $column => $value) {
+                    $cells[(string) $column] = is_scalar($value) ? $value : null;
+                }
+
+                $rows[] = $cells;
+            }
+        }
+
+        return $rows;
     }
 }

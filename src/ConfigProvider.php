@@ -47,7 +47,7 @@ final class ConfigProvider
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{storage: array{adapter: string, options: array{path: string}}}
      */
     public function getDefaults(): array
     {

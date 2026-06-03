@@ -12,6 +12,7 @@
     },
     "require-dev": {
         "laminas/laminas-coding-standard": "^3.0",
+        "phpstan/phpstan": "^2.2",
         "phpunit/phpunit": "^10.5 || ^11.0"
     },
     "autoload": {
@@ -29,7 +30,8 @@
     "scripts": {
         "test": "phpunit",
         "cs": "phpcs",
-        "cs-fix": "phpcbf"
+        "cs-fix": "phpcbf",
+        "stan": "phpstan analyse"
     },
     "config": {
         "sort-packages": true,

@@ -49,12 +49,14 @@ final class Logger extends AbstractLogger
      */
     public function log($level, string|Stringable $message, array $context = []): void
     {
-        [$priority, $priorityName] = self::PRIORITIES[(string) $level] ?? [7, (string) $level];
+        $level = is_scalar($level) || $level instanceof Stringable ? (string) $level : '';
+
+        [$priority, $priorityName] = self::PRIORITIES[$level] ?? [7, $level];
 
         $exception = $context['exception'] ?? null;
 
         $this->storage->store(new LogRecord(
-            level: (string) $level,
+            level: $level,
             priority: $priority,
             priorityName: $priorityName,
             message: $this->interpolate((string) $message, $context),
