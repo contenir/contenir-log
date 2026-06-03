@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-06-04
+
+### Added
+
+- `DbAdapterStorage` accepts an optional `context` map (config key
+  `log.storage.options.context`) that routes individual PSR-3 context entries to
+  their own table columns, e.g. `['student' => 'student_id']`. Only context keys
+  present on a record are written.
+
 ## [0.1.2] - 2026-06-04
 
 ### Added
@@ -41,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial alpha: pluggable PSR-3 logger for Laminas MVC and Mezzio, with
   filesystem and database storage backends.
 
+[0.1.3]: https://github.com/contenir/contenir-log/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/contenir/contenir-log/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/contenir/contenir-log/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/contenir/contenir-log/releases/tag/v0.1.0

@@ -12,9 +12,13 @@ use DateTimeImmutable;
  */
 final class LogRecordFactory
 {
+    /**
+     * @param array<string, mixed> $context
+     */
     public static function error(
         string $message = 'something broke',
         ?string $error = "RuntimeException: boom in /app.php:10\n#0 {main}",
+        array $context = [],
     ): LogRecord {
         return new LogRecord(
             level: 'error',
@@ -22,7 +26,7 @@ final class LogRecordFactory
             priorityName: 'ERR',
             message: $message,
             error: $error,
-            context: [],
+            context: $context,
             createdAt: new DateTimeImmutable('2026-05-27 10:00:00'),
         );
     }

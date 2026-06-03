@@ -41,30 +41,37 @@ final class DbAdapterStorageFactory
         $tableName = $options['table'] ?? null;
         $table     = is_string($tableName) ? $tableName : 'log';
 
-        return new DbAdapterStorage($adapter, $table, $this->resolveColumns($options['columns'] ?? null));
+        return new DbAdapterStorage(
+            $adapter,
+            $table,
+            $this->resolveStringMap($options['columns'] ?? null, DbAdapterStorage::DEFAULT_COLUMNS, 'columns'),
+            $this->resolveStringMap($options['context'] ?? null, [], 'context'),
+        );
     }
 
     /**
+     * @param array<string, string> $default
      * @return array<string, string>
-     * @throws RuntimeException If a configured column map is not string-to-string.
+     * @throws RuntimeException If the configured map is not string-to-string.
      */
-    private function resolveColumns(mixed $configured): array
+    private function resolveStringMap(mixed $configured, array $default, string $optionName): array
     {
         if (! is_array($configured)) {
-            return DbAdapterStorage::DEFAULT_COLUMNS;
+            return $default;
         }
 
-        $columns = [];
-        foreach ($configured as $field => $column) {
-            if (! is_string($field) || ! is_string($column)) {
-                throw new RuntimeException(
-                    'contenir/contenir-log: log storage "columns" must map string field names to string column names.'
-                );
+        $map = [];
+        foreach ($configured as $key => $column) {
+            if (! is_string($key) || ! is_string($column)) {
+                throw new RuntimeException(sprintf(
+                    'contenir/contenir-log: log storage "%s" must map string keys to string column names.',
+                    $optionName,
+                ));
             }
 
-            $columns[$field] = $column;
+            $map[$key] = $column;
         }
 
-        return $columns;
+        return $map;
     }
 }

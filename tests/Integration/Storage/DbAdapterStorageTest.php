@@ -61,4 +61,23 @@ final class DbAdapterStorageTest extends TestCase
         self::assertSame('3', (string) $rows[0]['lvl']);
         self::assertSame('ERR', $rows[0]['lvl_name']);
     }
+
+    public function testStoreRoutesContextEntriesToColumns(): void
+    {
+        $adapter = SqliteLogDatabase::adapter();
+        $adapter->query(
+            'CREATE TABLE log ('
+            . 'log_id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT, student_id INTEGER)',
+            Adapter::QUERY_MODE_EXECUTE,
+        );
+
+        $storage = new DbAdapterStorage($adapter, 'log', ['message' => 'message'], ['student' => 'student_id']);
+        $storage->store(LogRecordFactory::error(context: ['student' => 42]));
+        $storage->store(LogRecordFactory::error());
+
+        $rows = SqliteLogDatabase::rows($adapter);
+        self::assertCount(2, $rows);
+        self::assertSame('42', (string) $rows[0]['student_id']);
+        self::assertNull($rows[1]['student_id']);
+    }
 }

@@ -17,6 +17,11 @@ use function array_key_exists;
  * differently-named log tables can remap without code changes. Fields omitted
  * from the map are not written (e.g. a `createdAt` column with a DB default is
  * left for the database to populate).
+ *
+ * The context map additionally routes individual PSR-3 context entries to their
+ * own columns (e.g. `['student' => 'student_id']`), so domain identifiers passed
+ * alongside a message land in dedicated, indexable columns. Only context keys
+ * actually present on the record are written.
  */
 final class DbAdapterStorage implements StorageInterface
 {
@@ -28,12 +33,14 @@ final class DbAdapterStorage implements StorageInterface
     ];
 
     /**
-     * @param array<string, string> $columns LogRecord field => table column.
+     * @param array<string, string> $columns        LogRecord field => table column.
+     * @param array<string, string> $contextColumns Context key => table column.
      */
     public function __construct(
         private readonly AdapterInterface $adapter,
         private readonly string $table = 'log',
         private readonly array $columns = self::DEFAULT_COLUMNS,
+        private readonly array $contextColumns = [],
     ) {
     }
 
@@ -52,6 +59,12 @@ final class DbAdapterStorage implements StorageInterface
         foreach ($this->columns as $field => $column) {
             if (array_key_exists($field, $fields)) {
                 $values[$column] = $fields[$field];
+            }
+        }
+
+        foreach ($this->contextColumns as $contextKey => $column) {
+            if (array_key_exists($contextKey, $record->context)) {
+                $values[$column] = $record->context[$contextKey];
             }
         }
 

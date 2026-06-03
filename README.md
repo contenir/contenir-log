@@ -43,6 +43,12 @@ return [
                     'priority'     => 'priority',
                     'priorityName' => 'priorityName',
                 ],
+                // Optional: route individual PSR-3 context entries to their own
+                // columns. Only keys present on a given record are written, so a
+                // domain id like student maps straight to an indexable column.
+                'context' => [
+                    'student' => 'student_id',
+                ],
 
                 // filesystem:
                 // 'path' => 'data/log/app.log',
