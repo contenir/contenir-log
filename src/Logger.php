@@ -45,9 +45,10 @@ final class Logger extends AbstractLogger
 
     /**
      * @param mixed                   $level
+     * @param string|Stringable       $message
      * @param array<array-key, mixed> $context
      */
-    public function log($level, string|Stringable $message, array $context = []): void
+    public function log($level, $message, array $context = []): void
     {
         $level = is_scalar($level) || $level instanceof Stringable ? (string) $level : '';
 

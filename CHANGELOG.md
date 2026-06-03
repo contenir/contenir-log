@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-06-04
+
+### Fixed
+
+- `Logger::log()` is now compatible with psr/log 1.x. The native
+  `string|Stringable` type on `$message` narrowed psr/log 1.x's untyped
+  `LoggerInterface::log()` parameter, causing a fatal incompatibility error
+  whenever the package resolved against psr/log 1.x (the type is retained as a
+  PHPStan `@param` annotation).
+
+### Added
+
+- GitHub Actions CI running coding standards, static analysis, and tests across
+  PHP 8.1–8.3 with both `--prefer-lowest` and highest dependency resolutions, so
+  the full declared `psr/log` range is exercised.
+
 ## [0.1.3] - 2026-06-04
 
 ### Added
@@ -50,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial alpha: pluggable PSR-3 logger for Laminas MVC and Mezzio, with
   filesystem and database storage backends.
 
+[0.1.4]: https://github.com/contenir/contenir-log/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/contenir/contenir-log/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/contenir/contenir-log/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/contenir/contenir-log/compare/v0.1.0...v0.1.1
