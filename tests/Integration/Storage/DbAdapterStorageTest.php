@@ -55,7 +55,7 @@ final class DbAdapterStorageTest extends TestCase
         $adapter = SqliteLogDatabase::adapter();
         $adapter->query('CREATE TABLE log (message TEXT)', Adapter::QUERY_MODE_EXECUTE);
 
-        (new DbAdapterStorage($adapter, 'log', ['message' => 'message', 'channel' => 'channel']))->store(
+        (new DbAdapterStorage($adapter, 'log', ['channel' => 'channel', 'message' => 'message']))->store(
             LogRecordFactory::error(),
         );
 
@@ -77,6 +77,32 @@ final class DbAdapterStorageTest extends TestCase
                 'priorityName' => 'ERR',
             ]],
             SqliteLogDatabase::rows($adapter, columns: 'message, error, priority, priorityName'),
+        );
+    }
+
+    #[Test]
+    public function routesContextEntriesListedAfterAnAbsentOne(): void
+    {
+        $adapter = SqliteLogDatabase::adapter();
+        $adapter->query(
+            'CREATE TABLE log (message TEXT, course_id INTEGER, student_id INTEGER)',
+            Adapter::QUERY_MODE_EXECUTE,
+        );
+
+        $storage = new DbAdapterStorage(
+            $adapter,
+            'log',
+            ['message' => 'message'],
+            [
+                'course'  => 'course_id',
+                'student' => 'student_id',
+            ],
+        );
+        $storage->store(LogRecordFactory::error(context: ['student' => 42]));
+
+        static::assertSame(
+            [['message' => 'something broke', 'course_id' => null, 'student_id' => '42']],
+            SqliteLogDatabase::rows($adapter),
         );
     }
 

@@ -70,8 +70,8 @@ final class DbAdapterStorageFactoryTest extends TestCase
                         'options' => [
                             'adapter' => 'db.adapter',
                             'table'   => 'audit',
-                            'columns' => ['message' => 'msg'],
-                            'context' => ['student' => 'student_id'],
+                            'columns' => ['message' => 'msg', 'error' => 'trace'],
+                            'context' => ['student' => 'student_id', 'course' => 'course_id'],
                         ],
                     ],
                 ],
@@ -80,7 +80,12 @@ final class DbAdapterStorageFactoryTest extends TestCase
         ]);
 
         static::assertEquals(
-            new DbAdapterStorage($this->adapter, 'audit', ['message' => 'msg'], ['student' => 'student_id']),
+            new DbAdapterStorage(
+                $this->adapter,
+                'audit',
+                ['message' => 'msg', 'error' => 'trace'],
+                ['student' => 'student_id', 'course' => 'course_id'],
+            ),
             (new DbAdapterStorageFactory())($container),
         );
     }

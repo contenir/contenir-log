@@ -14,15 +14,40 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
+use function clearstatcache;
 use function dirname;
+use function error_clear_last;
+use function error_get_last;
 use function file_get_contents;
 use function file_put_contents;
+use function fileperms;
 use function mkdir;
+use function umask;
 
 #[Group('integration')]
 final class FilesystemStorageTest extends TestCase
 {
     use UsesTemporaryLogFileTrait;
+
+    /**
+     * Store a record that is expected to fail, returning the exception message
+     * and whatever error PHP recorded meanwhile, so a suppressed warning is
+     * proven not to have reached PHP's own error handling.
+     *
+     * @return array{string, array{type: int, message: string, file: string, line: int}|null}
+     */
+    private static function failureAndLastError(FilesystemStorage $storage): array
+    {
+        error_clear_last();
+
+        try {
+            $storage->store(LogRecordFactory::error());
+        } catch (RuntimeException $exception) {
+            return [$exception->getMessage(), error_get_last()];
+        }
+
+        static::fail('Expected the storage to throw a RuntimeException.');
+    }
 
     #[Test]
     public function appendsToAnExistingFile(): void
@@ -50,16 +75,34 @@ final class FilesystemStorageTest extends TestCase
     }
 
     #[Test]
+    public function createsTheDirectoryGroupWritableSubjectToTheUmask(): void
+    {
+        $previousUmask = umask(0);
+
+        try {
+            (new FilesystemStorage($this->logFile))->store(LogRecordFactory::error());
+        } finally {
+            umask($previousUmask);
+        }
+
+        clearstatcache();
+        static::assertSame(0o775, fileperms(dirname($this->logFile)) & 0o777);
+    }
+
+    #[Test]
     public function throwsWithoutRaisingAWarningWhenTheDirectoryCannotBeCreated(): void
     {
         mkdir(dirname($this->logFile));
         file_put_contents($this->logFile, data: '');
         $directory = "{$this->logFile}/nested";
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage("contenir/contenir-log: cannot create log directory \"{$directory}\".");
-
-        (new FilesystemStorage("{$directory}/app.log"))->store(LogRecordFactory::error());
+        static::assertSame(
+            [
+                "contenir/contenir-log: cannot create log directory \"{$directory}\".",
+                null,
+            ],
+            self::failureAndLastError(new FilesystemStorage("{$directory}/app.log")),
+        );
     }
 
     #[Test]
@@ -67,10 +110,10 @@ final class FilesystemStorageTest extends TestCase
     {
         mkdir($this->logFile, recursive: true);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage("contenir/contenir-log: cannot write to log file \"{$this->logFile}\".");
-
-        (new FilesystemStorage($this->logFile))->store(LogRecordFactory::error());
+        static::assertSame(
+            ["contenir/contenir-log: cannot write to log file \"{$this->logFile}\".", null],
+            self::failureAndLastError(new FilesystemStorage($this->logFile)),
+        );
     }
 
     #[Test]

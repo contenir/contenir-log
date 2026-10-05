@@ -34,17 +34,22 @@ final class LoggerTest extends TestCase
     public static function interpolationProvider(): array
     {
         return [
-            'string value'           => ['at {uri}', ['uri' => '/spa'], 'at /spa'],
-            'integer value'          => ['id {id}', ['id' => 42], 'id 42'],
-            'float value'            => ['took {secs}s', ['secs' => 1.5], 'took 1.5s'],
-            'boolean value'          => ['flag {on}', ['on' => true], 'flag 1'],
-            'stringable value'       => ['user {user}', ['user' => new StringableValue('ann')], 'user ann'],
-            'integer key'            => ['first {0}', ['zero'], 'first zero'],
-            'array value is skipped' => ['ids {ids}', ['ids' => [1, 2]], 'ids {ids}'],
-            'object value skipped'   => ['obj {obj}', ['obj' => new stdClass()], 'obj {obj}'],
-            'null value is skipped'  => ['val {val}', ['val' => null], 'val {val}'],
-            'unknown placeholder'    => ['at {uri}', [], 'at {uri}'],
-            'exception not inlined'  => ['{exception}', ['exception' => 'text'], '{exception}'],
+            'string value'            => ['at {uri}', ['uri' => '/spa'], 'at /spa'],
+            'integer value'           => ['id {id}', ['id' => 42], 'id 42'],
+            'float value'             => ['took {secs}s', ['secs' => 1.5], 'took 1.5s'],
+            'boolean value'           => ['flag {on}', ['on' => true], 'flag 1'],
+            'stringable value'        => ['user {user}', ['user' => new StringableValue('ann')], 'user ann'],
+            'integer key'             => ['first {0}', ['zero'], 'first zero'],
+            'array value is skipped'  => ['ids {ids}', ['ids' => [1, 2]], 'ids {ids}'],
+            'object value skipped'    => ['obj {obj}', ['obj' => new stdClass()], 'obj {obj}'],
+            'null value is skipped'   => ['val {val}', ['val' => null], 'val {val}'],
+            'unknown placeholder'     => ['at {uri}', [], 'at {uri}'],
+            'exception not inlined'   => ['{exception}', ['exception' => 'text'], '{exception}'],
+            'entries after exception' => [
+                '{exception} at {uri}',
+                ['exception' => 'text', 'uri' => '/spa'],
+                '{exception} at /spa',
+            ],
         ];
     }
 
