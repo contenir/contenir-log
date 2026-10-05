@@ -239,6 +239,7 @@ composer static-analysis   # mago analyze
 composer test              # unit suite: no I/O, collaborators doubled
 composer test-integration  # integration suite: real filesystem and in-memory SQLite
 composer test-coverage     # both suites, clover.xml for Codecov
+composer mutation-test     # Infection mutation testing over both suites
 ```
 
 The integration suite needs the `pdo_sqlite` extension for the database tests.
