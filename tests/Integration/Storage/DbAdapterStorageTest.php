@@ -9,40 +9,20 @@ use Contenir\Log\Tests\TestAsset\LogRecordFactory;
 use Contenir\Log\Tests\TestAsset\SqliteLogDatabase;
 use Laminas\Db\Adapter\Adapter;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RequiresPhpExtension;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-use function extension_loaded;
-
 #[Group('integration')]
+#[RequiresPhpExtension('pdo_sqlite')]
 final class DbAdapterStorageTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        if (! extension_loaded('pdo_sqlite')) {
-            self::markTestSkipped('pdo_sqlite is not available');
-        }
-    }
-
-    public function testStoreInsertsMappedColumnsIntoLogTable(): void
-    {
-        $adapter = SqliteLogDatabase::create();
-
-        (new DbAdapterStorage($adapter))->store(LogRecordFactory::error());
-
-        $rows = SqliteLogDatabase::rows($adapter);
-        self::assertCount(1, $rows);
-        self::assertSame('something broke', $rows[0]['message']);
-        self::assertStringContainsString('RuntimeException: boom', (string) $rows[0]['error']);
-        self::assertSame('3', (string) $rows[0]['priority']);
-        self::assertSame('ERR', $rows[0]['priorityName']);
-    }
-
-    public function testStoreHonoursCustomColumnMap(): void
+    #[Test]
+    public function honoursACustomTableAndColumnMapIncludingLevelAndTimestamp(): void
     {
         $adapter = SqliteLogDatabase::adapter();
         $adapter->query(
-            'CREATE TABLE audit ('
-            . 'id INTEGER PRIMARY KEY AUTOINCREMENT, msg TEXT, trace TEXT, lvl INTEGER, lvl_name TEXT)',
+            'CREATE TABLE audit (msg TEXT, trace TEXT, lvl INTEGER, lvl_name TEXT, psr_level TEXT, logged_at TEXT)',
             Adapter::QUERY_MODE_EXECUTE,
         );
 
@@ -51,33 +31,74 @@ final class DbAdapterStorageTest extends TestCase
             'error'        => 'trace',
             'priority'     => 'lvl',
             'priorityName' => 'lvl_name',
+            'level'        => 'psr_level',
+            'createdAt'    => 'logged_at',
         ]);
-        $storage->store(LogRecordFactory::error());
+        $storage->store(LogRecordFactory::error(error: null));
 
-        $rows = SqliteLogDatabase::rows($adapter, 'audit');
-        self::assertCount(1, $rows);
-        self::assertSame('something broke', $rows[0]['msg']);
-        self::assertStringContainsString('RuntimeException: boom', (string) $rows[0]['trace']);
-        self::assertSame('3', (string) $rows[0]['lvl']);
-        self::assertSame('ERR', $rows[0]['lvl_name']);
+        static::assertSame(
+            [[
+                'msg'       => 'something broke',
+                'trace'     => null,
+                'lvl'       => '3',
+                'lvl_name'  => 'ERR',
+                'psr_level' => 'error',
+                'logged_at' => '2026-05-27 10:00:00',
+            ]],
+            SqliteLogDatabase::rows($adapter, 'audit'),
+        );
     }
 
-    public function testStoreRoutesContextEntriesToColumns(): void
+    #[Test]
+    public function ignoresMappedFieldsThatARecordDoesNotHave(): void
     {
         $adapter = SqliteLogDatabase::adapter();
-        $adapter->query(
-            'CREATE TABLE log ('
-            . 'log_id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT, student_id INTEGER)',
-            Adapter::QUERY_MODE_EXECUTE,
+        $adapter->query('CREATE TABLE log (message TEXT)', Adapter::QUERY_MODE_EXECUTE);
+
+        (new DbAdapterStorage($adapter, 'log', ['message' => 'message', 'channel' => 'channel']))->store(
+            LogRecordFactory::error(),
         );
 
-        $storage = new DbAdapterStorage($adapter, 'log', ['message' => 'message'], ['student' => 'student_id']);
-        $storage->store(LogRecordFactory::error(context: ['student' => 42]));
-        $storage->store(LogRecordFactory::error());
+        static::assertSame([['message' => 'something broke']], SqliteLogDatabase::rows($adapter));
+    }
 
-        $rows = SqliteLogDatabase::rows($adapter);
-        self::assertCount(2, $rows);
-        self::assertSame('42', (string) $rows[0]['student_id']);
-        self::assertNull($rows[1]['student_id']);
+    #[Test]
+    public function insertsTheDefaultColumnsIntoTheLogTable(): void
+    {
+        $adapter = SqliteLogDatabase::create();
+
+        (new DbAdapterStorage($adapter))->store(LogRecordFactory::error());
+
+        static::assertSame(
+            [[
+                'message'      => 'something broke',
+                'error'        => "RuntimeException: boom in /app.php:10\n#0 {main}",
+                'priority'     => '3',
+                'priorityName' => 'ERR',
+            ]],
+            SqliteLogDatabase::rows($adapter, columns: 'message, error, priority, priorityName'),
+        );
+    }
+
+    #[Test]
+    public function routesPresentContextEntriesToTheirColumns(): void
+    {
+        $adapter = SqliteLogDatabase::adapter();
+        $adapter->query('CREATE TABLE log (message TEXT, student_id INTEGER)', Adapter::QUERY_MODE_EXECUTE);
+
+        $storage = new DbAdapterStorage($adapter, 'log', ['message' => 'message'], ['student' => 'student_id']);
+        $storage->store(LogRecordFactory::error(
+            message: 'with student',
+            context: ['student' => 42],
+        ));
+        $storage->store(LogRecordFactory::error(message: 'without student'));
+
+        static::assertSame(
+            [
+                ['message' => 'with student', 'student_id' => '42'],
+                ['message' => 'without student', 'student_id' => null],
+            ],
+            SqliteLogDatabase::rows($adapter),
+        );
     }
 }

@@ -7,6 +7,4 @@ namespace Contenir\Log\Tests\TestAsset;
 use Psr\Container\NotFoundExceptionInterface;
 use RuntimeException;
 
-final class ServiceNotFoundException extends RuntimeException implements NotFoundExceptionInterface
-{
-}
+final class ServiceNotFoundException extends RuntimeException implements NotFoundExceptionInterface {}

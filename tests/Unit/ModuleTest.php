@@ -7,16 +7,23 @@ namespace Contenir\Log\Tests\Unit;
 use Contenir\Log\ConfigProvider;
 use Contenir\Log\Module;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 #[Group('unit')]
 final class ModuleTest extends TestCase
 {
-    public function testGetConfigMapsDependenciesOntoServiceManager(): void
+    #[Test]
+    public function exposesProviderServicesUnderServiceManagerKey(): void
     {
-        $config = (new Module())->getConfig();
+        $provider = new ConfigProvider();
 
-        self::assertSame((new ConfigProvider())->getDependencies(), $config['service_manager']);
-        self::assertArrayHasKey('log', $config);
+        static::assertSame(
+            [
+                'service_manager' => $provider->getDependencies(),
+                'log'             => $provider->getDefaults(),
+            ],
+            (new Module())->getConfig(),
+        );
     }
 }

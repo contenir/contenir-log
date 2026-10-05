@@ -14,17 +14,23 @@ namespace Contenir\Log;
  * `log.storage.adapter` is a service id resolved through the container — name a
  * StorageInterface FQCN (the two shipped ones, or your own). The `db` and
  * `filesystem` aliases below are shorthands for the two bundled backends.
+ *
+ * @api
  */
 final class ConfigProvider
 {
     /**
-     * @return array<string, mixed>
+     * @return array{storage: array{adapter: string, options: array{path: string}}}
      */
-    public function __invoke(): array
+    public function getDefaults(): array
     {
         return [
-            'dependencies' => $this->getDependencies(),
-            'log'          => $this->getDefaults(),
+            'storage' => [
+                'adapter' => 'filesystem',
+                'options' => [
+                    'path' => 'data/log/app.log',
+                ],
+            ],
         ];
     }
 
@@ -47,17 +53,13 @@ final class ConfigProvider
     }
 
     /**
-     * @return array{storage: array{adapter: string, options: array{path: string}}}
+     * @return array<string, mixed>
      */
-    public function getDefaults(): array
+    public function __invoke(): array
     {
         return [
-            'storage' => [
-                'adapter' => 'filesystem',
-                'options' => [
-                    'path' => 'data/log/app.log',
-                ],
-            ],
+            'dependencies' => $this->getDependencies(),
+            'log'          => $this->getDefaults(),
         ];
     }
 }

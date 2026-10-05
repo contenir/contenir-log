@@ -7,6 +7,7 @@ namespace Contenir\Log\Storage\Factory;
 use Contenir\Log\Storage\DbAdapterStorage;
 use Laminas\Db\Adapter\Adapter;
 use Laminas\Db\Adapter\AdapterInterface;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
 
@@ -14,48 +15,57 @@ use function is_array;
 use function is_string;
 use function sprintf;
 
+/**
+ * Builds {@see DbAdapterStorage} from `log.storage.options`: the `adapter`
+ * service id (default {@see Adapter}), the `table` (default `log`), and the
+ * `columns` and `context` maps.
+ *
+ * @api
+ */
 final class DbAdapterStorageFactory
 {
-    public function __invoke(ContainerInterface $container): DbAdapterStorage
+    /**
+     * @return array<array-key, mixed>
+     *
+     * @throws ContainerExceptionInterface
+     *
+     * @mago-expect analysis:mixed-assignment Configuration is untyped input; each level is checked here.
+     */
+    private static function storageOptions(ContainerInterface $container): array
     {
-        $config     = $container->has('config') ? $container->get('config') : [];
-        $config     = is_array($config) ? $config : [];
-        $log        = $config['log'] ?? null;
-        $log        = is_array($log) ? $log : [];
-        $storageCfg = $log['storage'] ?? null;
-        $storageCfg = is_array($storageCfg) ? $storageCfg : [];
-        $options    = $storageCfg['options'] ?? null;
-        $options    = is_array($options) ? $options : [];
-
-        $adapterName    = $options['adapter'] ?? null;
-        $adapterService = is_string($adapterName) ? $adapterName : Adapter::class;
-        $adapter        = $container->get($adapterService);
-        if (! $adapter instanceof AdapterInterface) {
-            throw new RuntimeException(sprintf(
-                'contenir/contenir-log: db adapter service "%s" must implement %s.',
-                $adapterService,
-                AdapterInterface::class,
-            ));
+        $value = $container->has('config') ? $container->get('config') : [];
+        foreach (['log', 'storage', 'options'] as $key) {
+            $value = is_array($value) ? $value[$key] ?? null : null;
         }
 
-        $tableName = $options['table'] ?? null;
-        $table     = is_string($tableName) ? $tableName : 'log';
-
-        return new DbAdapterStorage(
-            $adapter,
-            $table,
-            $this->resolveStringMap($options['columns'] ?? null, DbAdapterStorage::DEFAULT_COLUMNS, 'columns'),
-            $this->resolveStringMap($options['context'] ?? null, [], 'context'),
-        );
+        return is_array($value) ? $value : [];
     }
 
     /**
-     * @param array<string, string> $default
-     * @return array<string, string>
-     * @throws RuntimeException If the configured map is not string-to-string.
+     * @param array<array-key, mixed> $options
+     *
+     * @mago-expect analysis:mixed-assignment Configuration is untyped input; the value is checked here.
      */
-    private function resolveStringMap(mixed $configured, array $default, string $optionName): array
+    private static function string(array $options, string $key, string $default): string
     {
+        $value = $options[$key] ?? null;
+
+        return is_string($value) ? $value : $default;
+    }
+
+    /**
+     * @param array<array-key, mixed> $options
+     * @param array<string, string>   $default
+     *
+     * @return array<string, string>
+     *
+     * @throws RuntimeException If the configured map is not string-to-string.
+     *
+     * @mago-expect analysis:mixed-assignment Configuration is untyped input; each entry is checked here.
+     */
+    private static function stringMap(array $options, string $optionName, array $default): array
+    {
+        $configured = $options[$optionName] ?? null;
         if (! is_array($configured)) {
             return $default;
         }
@@ -73,5 +83,32 @@ final class DbAdapterStorageFactory
         }
 
         return $map;
+    }
+
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws RuntimeException When the adapter service is not a db adapter, or a map is not string-to-string.
+     *
+     * @mago-expect analysis:mixed-assignment Container services are untyped; the type is checked here.
+     */
+    public function __invoke(ContainerInterface $container): DbAdapterStorage
+    {
+        $options        = self::storageOptions($container);
+        $adapterService = self::string($options, 'adapter', Adapter::class);
+        $adapter        = $container->get($adapterService);
+        if (! $adapter instanceof AdapterInterface) {
+            throw new RuntimeException(sprintf(
+                'contenir/contenir-log: db adapter service "%s" must implement %s.',
+                $adapterService,
+                AdapterInterface::class,
+            ));
+        }
+
+        return new DbAdapterStorage(
+            $adapter,
+            self::string($options, 'table', 'log'),
+            self::stringMap($options, 'columns', DbAdapterStorage::DEFAULT_COLUMNS),
+            self::stringMap($options, 'context', []),
+        );
     }
 }

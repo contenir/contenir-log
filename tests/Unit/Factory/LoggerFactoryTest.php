@@ -8,36 +8,60 @@ use Contenir\Log\Factory\LoggerFactory;
 use Contenir\Log\Logger;
 use Contenir\Log\Storage\FilesystemStorage;
 use Contenir\Log\Tests\TestAsset\ArrayContainer;
+use Contenir\Log\Tests\TestAsset\CapturingStorage;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use stdClass;
 
-use function sys_get_temp_dir;
-
 #[Group('unit')]
 final class LoggerFactoryTest extends TestCase
 {
-    public function testBuildsLoggerWithTheConfiguredStorageService(): void
+    /**
+     * @return array<string, array{array<string, mixed>}>
+     */
+    public static function unconfiguredAdapterProvider(): array
     {
+        return [
+            'no config service'      => [[]],
+            'config is not an array' => [['config' => 'nonsense']],
+            'no log key'             => [['config' => []]],
+            'log is not an array'    => [['config' => ['log' => true]]],
+            'storage not an array'   => [['config' => ['log' => ['storage' => 'db']]]],
+            'no adapter key'         => [['config' => ['log' => ['storage' => []]]]],
+            'adapter not a string'   => [['config' => ['log' => ['storage' => ['adapter' => 42]]]]],
+        ];
+    }
+
+    #[Test]
+    public function buildsLoggerAroundTheConfiguredStorageService(): void
+    {
+        $storage   = new CapturingStorage();
         $container = new ArrayContainer([
             'config'     => ['log' => ['storage' => ['adapter' => 'my-storage']]],
-            'my-storage' => new FilesystemStorage(sys_get_temp_dir() . '/contenir-log.log'),
+            'my-storage' => $storage,
         ]);
 
-        self::assertInstanceOf(Logger::class, (new LoggerFactory())($container));
+        static::assertEquals(new Logger($storage), (new LoggerFactory())($container));
     }
 
-    public function testFallsBackToFilesystemStorageClassWhenUnconfigured(): void
+    /**
+     * @param array<string, mixed> $services
+     */
+    #[Test]
+    #[DataProvider('unconfiguredAdapterProvider')]
+    public function fallsBackToFilesystemStorageServiceWhenNoAdapterIsConfigured(array $services): void
     {
-        $container = new ArrayContainer([
-            FilesystemStorage::class => new FilesystemStorage(sys_get_temp_dir() . '/contenir-log.log'),
-        ]);
+        $storage   = new FilesystemStorage('/var/log/app.log');
+        $container = new ArrayContainer([...$services, FilesystemStorage::class => $storage]);
 
-        self::assertInstanceOf(Logger::class, (new LoggerFactory())($container));
+        static::assertEquals(new Logger($storage), (new LoggerFactory())($container));
     }
 
-    public function testThrowsWhenAdapterDoesNotResolveToStorage(): void
+    #[Test]
+    public function rejectsAnAdapterServiceThatIsNotAStorage(): void
     {
         $container = new ArrayContainer([
             'config' => ['log' => ['storage' => ['adapter' => 'broken']]],
@@ -45,6 +69,10 @@ final class LoggerFactoryTest extends TestCase
         ]);
 
         $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage(
+            'contenir/contenir-log: storage adapter "broken" must resolve to a Contenir\Log\Storage\StorageInterface.',
+        );
+
         (new LoggerFactory())($container);
     }
 }

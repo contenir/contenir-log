@@ -14,8 +14,9 @@ use function unlink;
 
 /**
  * Provides a unique temporary log-file path and tidies it (and its directory)
- * away afterwards. Call setUpTemporaryLogFile()/tearDownTemporaryLogFile() from
- * the test's setUp()/tearDown() — the trait methods aren't named setUp directly
+ * away afterwards, including when a test made the log path itself a
+ * directory. Call setUpTemporaryLogFile()/tearDownTemporaryLogFile() from
+ * the test's setUp()/tearDown(); the trait methods aren't named setUp directly
  * to avoid collisions when a class composes several traits.
  */
 trait UsesTemporaryLogFileTrait
@@ -24,13 +25,17 @@ trait UsesTemporaryLogFileTrait
 
     protected function setUpTemporaryLogFile(): void
     {
-        $this->logFile = sys_get_temp_dir() . '/contenir-log-' . uniqid('', true) . '/app.log';
+        $this->logFile = sys_get_temp_dir() . '/contenir-log-' . uniqid(more_entropy: true) . '/app.log';
     }
 
     protected function tearDownTemporaryLogFile(): void
     {
         if (is_file($this->logFile)) {
             unlink($this->logFile);
+        }
+
+        if (is_dir($this->logFile)) {
+            rmdir($this->logFile);
         }
 
         $directory = dirname($this->logFile);

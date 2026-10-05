@@ -8,6 +8,8 @@ namespace Contenir\Log;
  * Laminas MVC module shim. Maps {@see ConfigProvider}'s framework-neutral
  * `dependencies` onto the `service_manager` key the MVC container reads, so the
  * same package serves both MVC (this Module) and Mezzio (the ConfigProvider).
+ *
+ * @api
  */
 final class Module
 {

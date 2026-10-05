@@ -30,13 +30,13 @@ final class SqliteLogDatabase
         $adapter = self::adapter();
         $adapter->query(
             'CREATE TABLE log ('
-            . 'log_id INTEGER PRIMARY KEY AUTOINCREMENT, '
-            . 'message TEXT, '
-            . 'error TEXT, '
-            . 'priority INTEGER, '
-            . 'priorityName TEXT, '
-            . 'createdAt TEXT DEFAULT CURRENT_TIMESTAMP'
-            . ')',
+                . 'log_id INTEGER PRIMARY KEY AUTOINCREMENT, '
+                . 'message TEXT, '
+                . 'error TEXT, '
+                . 'priority INTEGER, '
+                . 'priorityName TEXT, '
+                . 'createdAt TEXT DEFAULT CURRENT_TIMESTAMP'
+                . ')',
             Adapter::QUERY_MODE_EXECUTE,
         );
 
@@ -44,18 +44,21 @@ final class SqliteLogDatabase
     }
 
     /**
-     * @return list<array<string, scalar|null>>
+     * Every row in insertion order, with values as strings (or null), the way
+     * PDO SQLite returns them.
+     *
+     * @return list<array<string, string|null>>
      */
-    public static function rows(Adapter $adapter, string $table = 'log'): array
+    public static function rows(Adapter $adapter, string $table = 'log', string $columns = '*'): array
     {
-        $result = $adapter->query('SELECT * FROM ' . $table . ' ORDER BY 1', Adapter::QUERY_MODE_EXECUTE);
+        $result = $adapter->query("SELECT {$columns} FROM {$table} ORDER BY rowid", Adapter::QUERY_MODE_EXECUTE);
 
         $rows = [];
         if ($result instanceof ResultSetInterface) {
             foreach ($result as $row) {
                 $cells = [];
                 foreach ((array) $row as $column => $value) {
-                    $cells[(string) $column] = is_scalar($value) ? $value : null;
+                    $cells[(string) $column] = is_scalar($value) ? (string) $value : null;
                 }
 
                 $rows[] = $cells;
