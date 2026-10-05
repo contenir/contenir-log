@@ -6,88 +6,106 @@ namespace Contenir\Log\Tests\Integration\Storage;
 
 use Contenir\Log\Storage\FilesystemStorage;
 use Contenir\Log\Tests\TestAsset\LogRecordFactory;
+use Contenir\Log\Tests\TestAsset\RacingDirectoryStreamWrapper;
 use Contenir\Log\Tests\Trait\UsesTemporaryLogFileTrait;
+use Override;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
+use function dirname;
 use function file_get_contents;
+use function file_put_contents;
 use function mkdir;
-use function restore_error_handler;
-use function rmdir;
-use function set_error_handler;
-use function sys_get_temp_dir;
-use function tempnam;
-use function uniqid;
-use function unlink;
 
 #[Group('integration')]
 final class FilesystemStorageTest extends TestCase
 {
     use UsesTemporaryLogFileTrait;
 
+    #[Test]
+    public function appendsToAnExistingFile(): void
+    {
+        mkdir(dirname($this->logFile));
+        file_put_contents($this->logFile, data: "existing\n");
+
+        (new FilesystemStorage($this->logFile))->store(LogRecordFactory::error(
+            message: 'next',
+            error: null,
+        ));
+
+        static::assertSame("existing\n[2026-05-27 10:00:00] ERR (3): next\n", file_get_contents($this->logFile));
+    }
+
+    #[Test]
+    public function createsTheDirectoryAndWritesTheEntryFollowedByTheError(): void
+    {
+        (new FilesystemStorage($this->logFile))->store(LogRecordFactory::error());
+
+        static::assertSame(
+            "[2026-05-27 10:00:00] ERR (3): something broke\nRuntimeException: boom in /app.php:10\n#0 {main}\n",
+            file_get_contents($this->logFile),
+        );
+    }
+
+    #[Test]
+    public function throwsWithoutRaisingAWarningWhenTheDirectoryCannotBeCreated(): void
+    {
+        mkdir(dirname($this->logFile));
+        file_put_contents($this->logFile, data: '');
+        $directory = "{$this->logFile}/nested";
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage("contenir/contenir-log: cannot create log directory \"{$directory}\".");
+
+        (new FilesystemStorage("{$directory}/app.log"))->store(LogRecordFactory::error());
+    }
+
+    #[Test]
+    public function throwsWithoutRaisingAWarningWhenTheFileCannotBeWritten(): void
+    {
+        mkdir($this->logFile, recursive: true);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage("contenir/contenir-log: cannot write to log file \"{$this->logFile}\".");
+
+        (new FilesystemStorage($this->logFile))->store(LogRecordFactory::error());
+    }
+
+    #[Test]
+    public function toleratesAnotherWorkerCreatingTheDirectoryFirst(): void
+    {
+        RacingDirectoryStreamWrapper::register();
+        $path = RacingDirectoryStreamWrapper::SCHEME . '://logs/app.log';
+
+        try {
+            $this->expectException(RuntimeException::class);
+            $this->expectExceptionMessage("contenir/contenir-log: cannot write to log file \"{$path}\".");
+
+            (new FilesystemStorage($path))->store(LogRecordFactory::error());
+        } finally {
+            RacingDirectoryStreamWrapper::unregister();
+        }
+    }
+
+    #[Test]
+    public function writesASingleLineWhenTheRecordHasNoError(): void
+    {
+        (new FilesystemStorage($this->logFile))->store(LogRecordFactory::error(error: null));
+
+        static::assertSame("[2026-05-27 10:00:00] ERR (3): something broke\n", file_get_contents($this->logFile));
+    }
+
+    #[Override]
     protected function setUp(): void
     {
         $this->setUpTemporaryLogFile();
     }
 
+    #[Override]
     protected function tearDown(): void
     {
         $this->tearDownTemporaryLogFile();
-    }
-
-    public function testStoreCreatesFileWithFormattedEntryAndTrace(): void
-    {
-        (new FilesystemStorage($this->logFile))->store(LogRecordFactory::error());
-
-        self::assertFileExists($this->logFile);
-        $contents = (string) file_get_contents($this->logFile);
-        self::assertStringContainsString('] ERR (3): something broke', $contents);
-        self::assertStringContainsString('RuntimeException: boom', $contents);
-    }
-
-    public function testAppendsSuccessiveEntriesWithoutOverwriting(): void
-    {
-        $storage = new FilesystemStorage($this->logFile);
-        $storage->store(LogRecordFactory::error(message: 'first entry'));
-        $storage->store(LogRecordFactory::error(message: 'second entry'));
-
-        $contents = (string) file_get_contents($this->logFile);
-        self::assertStringContainsString('first entry', $contents);
-        self::assertStringContainsString('second entry', $contents);
-    }
-
-    public function testThrowsWhenLogDirectoryCannotBeCreated(): void
-    {
-        // A regular file cannot host a child directory, so mkdir() fails.
-        $file    = (string) tempnam(sys_get_temp_dir(), 'contenir-log');
-        $storage = new FilesystemStorage($file . '/nested/app.log');
-
-        $this->expectException(RuntimeException::class);
-        try {
-            set_error_handler(static fn (): bool => true);
-            $storage->store(LogRecordFactory::error());
-        } finally {
-            restore_error_handler();
-            unlink($file);
-        }
-    }
-
-    public function testThrowsWhenFileCannotBeWritten(): void
-    {
-        // Point the storage at an existing directory: the parent exists (so
-        // mkdir is skipped) but writing the "file" fails.
-        $directory = sys_get_temp_dir() . '/contenir-log-' . uniqid('', true);
-        mkdir($directory, 0o775, true);
-        $storage = new FilesystemStorage($directory);
-
-        $this->expectException(RuntimeException::class);
-        try {
-            set_error_handler(static fn (): bool => true);
-            $storage->store(LogRecordFactory::error());
-        } finally {
-            restore_error_handler();
-            rmdir($directory);
-        }
     }
 }

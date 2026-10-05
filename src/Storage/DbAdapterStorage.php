@@ -7,6 +7,7 @@ namespace Contenir\Log\Storage;
 use Contenir\Log\LogRecord;
 use Laminas\Db\Adapter\AdapterInterface;
 use Laminas\Db\Sql\Sql;
+use Override;
 
 use function array_key_exists;
 
@@ -22,10 +23,12 @@ use function array_key_exists;
  * own columns (e.g. `['student' => 'student_id']`), so domain identifiers passed
  * alongside a message land in dedicated, indexable columns. Only context keys
  * actually present on the record are written.
+ *
+ * @api
  */
 final class DbAdapterStorage implements StorageInterface
 {
-    public const DEFAULT_COLUMNS = [
+    public const array DEFAULT_COLUMNS = [
         'message'      => 'message',
         'error'        => 'error',
         'priority'     => 'priority',
@@ -41,9 +44,9 @@ final class DbAdapterStorage implements StorageInterface
         private readonly string $table = 'log',
         private readonly array $columns = self::DEFAULT_COLUMNS,
         private readonly array $contextColumns = [],
-    ) {
-    }
+    ) {}
 
+    #[Override]
     public function store(LogRecord $record): void
     {
         $fields = [
@@ -57,15 +60,19 @@ final class DbAdapterStorage implements StorageInterface
 
         $values = [];
         foreach ($this->columns as $field => $column) {
-            if (array_key_exists($field, $fields)) {
-                $values[$column] = $fields[$field];
+            if (! array_key_exists($field, $fields)) {
+                continue;
             }
+
+            $values[$column] = $fields[$field];
         }
 
         foreach ($this->contextColumns as $contextKey => $column) {
-            if (array_key_exists($contextKey, $record->context)) {
-                $values[$column] = $record->context[$contextKey];
+            if (! array_key_exists($contextKey, $record->context)) {
+                continue;
             }
+
+            $values[$column] = $record->context[$contextKey];
         }
 
         $sql    = new Sql($this->adapter);

@@ -6,7 +6,9 @@ namespace Contenir\Log;
 
 use Contenir\Log\Storage\StorageInterface;
 use DateTimeImmutable;
+use Override;
 use Psr\Log\AbstractLogger;
+use RuntimeException;
 use Stringable;
 use Throwable;
 
@@ -24,11 +26,13 @@ use function strtr;
  *
  * priority/priorityName follow Laminas\Log's numeric scheme so existing log
  * tables built for it remain compatible.
+ *
+ * @api
  */
 final class Logger extends AbstractLogger
 {
     /** @var array<string, array{int, string}> PSR-3 level => [priority, priorityName]. */
-    private const PRIORITIES = [
+    private const array PRIORITIES = [
         'emergency' => [0, 'EMERG'],
         'alert'     => [1, 'ALERT'],
         'critical'  => [2, 'CRIT'],
@@ -39,15 +43,23 @@ final class Logger extends AbstractLogger
         'debug'     => [7, 'DEBUG'],
     ];
 
-    public function __construct(private readonly StorageInterface $storage)
-    {
-    }
+    public function __construct(
+        private readonly StorageInterface $storage,
+    ) {}
 
     /**
+     * $level and $message stay natively untyped: psr/log 1.x declares them
+     * untyped, and a native type here would narrow its signature.
+     *
      * @param mixed                   $level
      * @param string|Stringable       $message
      * @param array<array-key, mixed> $context
+     *
+     * @throws RuntimeException When the storage cannot persist the record.
+     *
+     * @mago-expect analysis:mixed-assignment PSR-3 context is untyped; the exception entry is checked here.
      */
+    #[Override]
     public function log($level, $message, array $context = []): void
     {
         $level = is_scalar($level) || $level instanceof Stringable ? (string) $level : '';
@@ -67,39 +79,41 @@ final class Logger extends AbstractLogger
         ));
     }
 
-    /**
-     * @param array<array-key, mixed> $context
-     */
-    private function interpolate(string $message, array $context): string
-    {
-        $replacements = [];
-        foreach ($context as $key => $value) {
-            if ($key === 'exception') {
-                continue;
-            }
-            if (is_scalar($value) || $value instanceof Stringable) {
-                $replacements['{' . $key . '}'] = (string) $value;
-            }
-        }
-
-        return strtr($message, $replacements);
-    }
-
     private function formatException(Throwable $exception): string
     {
         $lines     = [];
         $throwable = $exception;
-        while ($throwable !== null) {
-            $lines[]   = sprintf(
+        while (null !== $throwable) {
+            $lines[] = sprintf(
                 '%s: %s in %s:%d',
                 $throwable::class,
                 $throwable->getMessage(),
                 $throwable->getFile(),
-                $throwable->getLine()
+                $throwable->getLine(),
             );
             $throwable = $throwable->getPrevious();
         }
 
         return implode("\nCaused by ", $lines) . "\n" . $exception->getTraceAsString();
+    }
+
+    /**
+     * @param array<array-key, mixed> $context
+     *
+     * @mago-expect analysis:mixed-assignment PSR-3 context values are untyped; only scalars and Stringables are used.
+     */
+    private function interpolate(string $message, array $context): string
+    {
+        $replacements = [];
+        foreach ($context as $key => $value) {
+            if ('exception' === $key) {
+                continue;
+            }
+            if (is_scalar($value) || $value instanceof Stringable) {
+                $replacements["{{$key}}"] = (string) $value;
+            }
+        }
+
+        return strtr($message, $replacements);
     }
 }

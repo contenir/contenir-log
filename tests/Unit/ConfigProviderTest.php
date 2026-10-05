@@ -8,35 +8,55 @@ use Contenir\Log\ConfigProvider;
 use Contenir\Log\Factory\LoggerFactory;
 use Contenir\Log\Logger;
 use Contenir\Log\Storage\DbAdapterStorage;
+use Contenir\Log\Storage\Factory\DbAdapterStorageFactory;
+use Contenir\Log\Storage\Factory\FilesystemStorageFactory;
 use Contenir\Log\Storage\FilesystemStorage;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 #[Group('unit')]
 final class ConfigProviderTest extends TestCase
 {
-    public function testInvokeExposesDependenciesAndLogConfig(): void
+    #[Test]
+    public function defaultsSelectFilesystemStorageUnderDataLog(): void
     {
-        $config = (new ConfigProvider())();
-
-        self::assertArrayHasKey('dependencies', $config);
-        self::assertArrayHasKey('log', $config);
+        static::assertSame(
+            ['storage' => ['adapter' => 'filesystem', 'options' => ['path' => 'data/log/app.log']]],
+            (new ConfigProvider())->getDefaults(),
+        );
     }
 
-    public function testDependenciesRegisterFactoriesAndStorageAliases(): void
+    #[Test]
+    public function dependenciesRegisterFactoriesAndStorageAliases(): void
     {
-        $dependencies = (new ConfigProvider())->getDependencies();
-
-        self::assertSame(LoggerFactory::class, $dependencies['factories'][Logger::class]);
-        self::assertSame(DbAdapterStorage::class, $dependencies['aliases']['db']);
-        self::assertSame(FilesystemStorage::class, $dependencies['aliases']['filesystem']);
+        static::assertSame(
+            [
+                'aliases'   => [
+                    'db'         => DbAdapterStorage::class,
+                    'filesystem' => FilesystemStorage::class,
+                ],
+                'factories' => [
+                    Logger::class            => LoggerFactory::class,
+                    FilesystemStorage::class => FilesystemStorageFactory::class,
+                    DbAdapterStorage::class  => DbAdapterStorageFactory::class,
+                ],
+            ],
+            (new ConfigProvider())->getDependencies(),
+        );
     }
 
-    public function testDefaultsSelectFilesystemStorage(): void
+    #[Test]
+    public function invokingExposesDependenciesAndLogDefaults(): void
     {
-        $defaults = (new ConfigProvider())->getDefaults();
+        $provider = new ConfigProvider();
 
-        self::assertSame('filesystem', $defaults['storage']['adapter']);
-        self::assertSame('data/log/app.log', $defaults['storage']['options']['path']);
+        static::assertSame(
+            [
+                'dependencies' => $provider->getDependencies(),
+                'log'          => $provider->getDefaults(),
+            ],
+            $provider(),
+        );
     }
 }

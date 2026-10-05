@@ -1,42 +1,71 @@
 {
-    "name": "contenir/contenir-log",
-    "description": "Pluggable PSR-3 logger for Laminas MVC and Mezzio, with filesystem and database storage backends.",
-    "type": "library",
-    "license": "MIT",
-    "keywords": ["log", "logger", "psr-3", "laminas", "mezzio", "contenir"],
-    "require": {
-        "php": "^8.1 || ^8.2 || ^8.3",
-        "laminas/laminas-db": "^2.17",
-        "psr/container": "^1.0 || ^2.0",
-        "psr/log": "^1.0 || ^2.0 || ^3.0"
-    },
-    "require-dev": {
-        "laminas/laminas-coding-standard": "^3.0",
-        "phpstan/phpstan": "^2.2",
-        "phpunit/phpunit": "^10.5 || ^11.0"
-    },
-    "autoload": {
-        "psr-4": { "Contenir\\Log\\": "src/" }
-    },
-    "autoload-dev": {
-        "psr-4": { "Contenir\\Log\\Tests\\": "tests/" }
-    },
-    "extra": {
-        "laminas": {
-            "module": "Contenir\\Log",
-            "config-provider": "Contenir\\Log\\ConfigProvider"
-        }
-    },
-    "scripts": {
-        "test": "phpunit",
-        "cs": "phpcs",
-        "cs-fix": "phpcbf",
-        "stan": "phpstan analyse"
-    },
-    "config": {
-        "sort-packages": true,
-        "allow-plugins": {
-            "dealerdirect/phpcodesniffer-composer-installer": true
-        }
+  "name": "contenir/contenir-log",
+  "description": "Pluggable PSR-3 logger for Laminas MVC and Mezzio, with filesystem and database storage backends.",
+  "type": "library",
+  "license": "MIT",
+  "keywords": [
+    "log",
+    "logger",
+    "psr-3",
+    "laminas",
+    "mezzio",
+    "contenir"
+  ],
+  "require": {
+    "php": "~8.3.0 || ~8.4.0 || ~8.5.0",
+    "laminas/laminas-db": "^2.19",
+    "psr/container": "^1.0 || ^2.0",
+    "psr/log": "^1.0 || ^2.0 || ^3.0"
+  },
+  "require-dev": {
+    "php-db/phpdb-qa-tools": "0.1.x-dev",
+    "phpunit/phpunit": "^11.5.42"
+  },
+  "autoload": {
+    "psr-4": {
+      "Contenir\\Log\\": "src/"
     }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Contenir\\Log\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "check": [
+      "@cs-check",
+      "@static-analysis",
+      "@test",
+      "@test-integration"
+    ],
+    "cs-check": [
+      "mago format --check",
+      "mago lint"
+    ],
+    "cs-fix": [
+      "mago format",
+      "mago lint --fix"
+    ],
+    "static-analysis": "mago analyze",
+    "test": "phpunit --colors=always --testsuite unit",
+    "test-integration": "phpunit --colors=always --testsuite integration",
+    "test-coverage": "phpunit --colors=always --coverage-clover clover.xml"
+  },
+  "config": {
+    "platform": {
+      "php": "8.3.99"
+    },
+    "sort-packages": true
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-main": "2.0.x-dev"
+    },
+    "laminas": {
+      "module": "Contenir\\Log",
+      "config-provider": "Contenir\\Log\\ConfigProvider"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
 }
