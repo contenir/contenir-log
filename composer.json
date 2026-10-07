@@ -13,13 +13,14 @@
   ],
   "require": {
     "php": "~8.3.0 || ~8.4.0 || ~8.5.0",
-    "laminas/laminas-db": "^2.19",
+    "php-db/phpdb": "0.6.x-dev",
     "psr/container": "^1.0 || ^2.0",
     "psr/log": "^1.0 || ^2.0 || ^3.0"
   },
   "require-dev": {
     "contenir/contenir-qa-tools": "0.1.x-dev",
     "infection/infection": "^0.34.1",
+    "php-db/phpdb-sqlite": "^0.2.0",
     "phpunit/phpunit": "^11.5.42"
   },
   "autoload": {

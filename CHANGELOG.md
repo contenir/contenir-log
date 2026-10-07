@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Infection mutation testing in CI, MSI 100%.
 
+### Changed
+
+- `DbAdapterStorage` and `DbAdapterStorageFactory` now use
+  `PhpDb\Adapter\AdapterInterface` and `PhpDb\Sql\Sql` from `php-db/phpdb`
+  (`0.6.x-dev`) in place of `laminas/laminas-db`, which is no longer
+  required. The class names and the `log.storage.options.adapter` option are
+  unchanged; the default adapter service id is now
+  `PhpDb\Adapter\Adapter`. See [UPGRADE-2.0.md](UPGRADE-2.0.md).
+
 ## [2.0.0] - 2026-10-05
 
 The public API is unchanged. The major version marks the move to PHP 8.3+

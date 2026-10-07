@@ -14,7 +14,8 @@ file entry), so a logged 500 carries everything you need to debug it.
 ## Requirements
 
 - PHP 8.3, 8.4 or 8.5
-- `laminas/laminas-db` ^2.19 (used by the database backend)
+- `php-db/phpdb` 0.6.x (used by the database backend), plus the driver
+  package for your database, e.g. `php-db/phpdb-sqlite`
 - `psr/log` ^1.0, ^2.0 or ^3.0
 - `psr/container` ^1.0 or ^2.0
 
@@ -97,9 +98,9 @@ another worker creating the same directory is not an error.
     'storage' => [
         'adapter' => 'db',
         'options' => [
-            // Service id of a Laminas\Db\Adapter\AdapterInterface.
-            'adapter' => Laminas\Db\Adapter\Adapter::class, // default
-            'table'   => 'log',                              // default
+            // Service id of a PhpDb\Adapter\AdapterInterface.
+            'adapter' => PhpDb\Adapter\Adapter::class, // default
+            'table'   => 'log',                        // default
 
             // LogRecord field => table column. Only mapped fields are written,
             // so a createdAt column with a database default can be left out.
@@ -190,7 +191,7 @@ use Contenir\Log\Storage\FilesystemStorage;
 $logger = new Logger(new FilesystemStorage('/var/log/site/app.log'));
 
 $logger = new Logger(new DbAdapterStorage(
-    $adapter,                              // Laminas\Db\Adapter\AdapterInterface
+    $adapter,                              // PhpDb\Adapter\AdapterInterface
     'audit',                               // table
     ['message' => 'msg', 'error' => 'trace'],
     ['student' => 'student_id'],
