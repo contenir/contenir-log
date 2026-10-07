@@ -14,7 +14,7 @@ database backend moves to php-db/phpdb, and one behaviour is fixed.
 To upgrade, update the constraint:
 
 ```bash
-composer require contenir/contenir-log:^2.0
+composer require contenir/contenir-log:^2.0@RC
 ```
 
 The database backend now uses php-db/phpdb instead of laminas-db. If you use

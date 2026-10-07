@@ -5,32 +5,24 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0-RC1] - Unreleased
 
-### Added
-
-- Infection mutation testing in CI, MSI 100%.
-
-### Changed
-
-- `DbAdapterStorage` and `DbAdapterStorageFactory` now use
-  `PhpDb\Adapter\AdapterInterface` and `PhpDb\Sql\Sql` from `php-db/phpdb`
-  (`0.6.x-dev`) in place of `laminas/laminas-db`, which is no longer
-  required. The class names and the `log.storage.options.adapter` option are
-  unchanged; the default adapter service id is now
-  `PhpDb\Adapter\Adapter`. See [UPGRADE-2.0.md](UPGRADE-2.0.md).
-
-## [2.0.0] - 2026-10-05
-
-The public API is unchanged. The major version marks the move to PHP 8.3+
-and the php-db QA toolchain shared by all Contenir 2.x packages. See
+The first 2.0 pre-release. The public API is unchanged; the database backend
+moves from laminas-db to php-db/phpdb. The major version marks the move to
+PHP 8.3+ and the QA toolchain shared by all Contenir 2.x packages. See
 [UPGRADE-2.0.md](UPGRADE-2.0.md).
+
+The 2.0.0 tag published on 2026-10-05 was withdrawn and is folded into this
+release.
 
 ### Changed
 
 - Requires PHP 8.3, 8.4 or 8.5. PHP 8.1 and 8.2 are no longer supported.
-- Requires `laminas/laminas-db` `^2.19`, the first release that supports PHP
-  8.3 (was `^2.17`).
+- `DbAdapterStorage` and `DbAdapterStorageFactory` now use
+  `PhpDb\Adapter\AdapterInterface` and `PhpDb\Sql\Sql` from `php-db/phpdb`
+  (`0.6.x-dev`) in place of `laminas/laminas-db`. The class names and the
+  `log.storage.options.adapter` option are unchanged; the default adapter
+  service id is now `PhpDb\Adapter\Adapter`.
 - `psr/log` stays at `^1.0 || ^2.0 || ^3.0` and `psr/container` at
   `^1.0 || ^2.0`. `Logger::log()` keeps its natively untyped `$level` and
   `$message` so it remains compatible with psr/log 1.x.
@@ -52,14 +44,16 @@ and the php-db QA toolchain shared by all Contenir 2.x packages. See
 ### Added
 
 - Continuous integration on PHP 8.3, 8.4 and 8.5 against lowest, locked and
-  latest dependencies, with coverage reported to Codecov.
+  latest dependencies, with coverage reported to Codecov and Infection
+  mutation testing at MSI 100%.
 - Separate unit (no I/O) and integration (real filesystem and SQLite) test
   suites, with 100% line and branch coverage.
 
 ### Removed
 
+- `laminas/laminas-db`, replaced by `php-db/phpdb`.
 - `laminas/laminas-coding-standard`, `phpstan/phpstan`, `phpcs.xml` and
-  `phpstan.neon`, replaced by Mago via `php-db/phpdb-qa-tools`.
+  `phpstan.neon`, replaced by Mago via contenir-qa-tools.
 
 ## [0.1.4] - 2026-06-04
 
@@ -122,7 +116,7 @@ and the php-db QA toolchain shared by all Contenir 2.x packages. See
 - Initial alpha: pluggable PSR-3 logger for Laminas MVC and Mezzio, with
   filesystem and database storage backends.
 
-[2.0.0]: https://github.com/contenir/contenir-log/compare/v0.1.4...HEAD
+[2.0.0-RC1]: https://github.com/contenir/contenir-log/compare/v0.1.4...HEAD
 [0.1.4]: https://github.com/contenir/contenir-log/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/contenir/contenir-log/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/contenir/contenir-log/compare/v0.1.1...v0.1.2
