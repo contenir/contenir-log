@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Contenir\Log\Tests\TestAsset;
 
-use Laminas\Db\Adapter\Adapter;
-use Laminas\Db\ResultSet\ResultSetInterface;
+use PhpDb\Adapter\Adapter;
+use PhpDb\Sqlite\AdapterPlatform;
+use PhpDb\Sqlite\Pdo\Connection;
+use PhpDb\Sqlite\Pdo\Driver;
+use PhpDb\Sqlite\Pdo\Feature\SqliteRowCounter;
 
 use function is_scalar;
 
@@ -19,16 +22,18 @@ final class SqliteLogDatabase
 {
     public static function adapter(): Adapter
     {
-        return new Adapter([
-            'driver'   => 'Pdo_Sqlite',
-            'database' => ':memory:',
-        ]);
+        $driver = new Driver(
+            new Connection(['dsn' => 'sqlite::memory:']),
+            features: [new SqliteRowCounter()],
+        );
+
+        return new Adapter($driver, new AdapterPlatform($driver));
     }
 
     public static function create(): Adapter
     {
         $adapter = self::adapter();
-        $adapter->query(
+        $adapter->executeQuery(
             'CREATE TABLE log ('
                 . 'log_id INTEGER PRIMARY KEY AUTOINCREMENT, '
                 . 'message TEXT, '
@@ -37,7 +42,6 @@ final class SqliteLogDatabase
                 . 'priorityName TEXT, '
                 . 'createdAt TEXT DEFAULT CURRENT_TIMESTAMP'
                 . ')',
-            Adapter::QUERY_MODE_EXECUTE,
         );
 
         return $adapter;
@@ -51,18 +55,16 @@ final class SqliteLogDatabase
      */
     public static function rows(Adapter $adapter, string $table = 'log', string $columns = '*'): array
     {
-        $result = $adapter->query("SELECT {$columns} FROM {$table} ORDER BY rowid", Adapter::QUERY_MODE_EXECUTE);
+        $result = $adapter->executeQuery("SELECT {$columns} FROM {$table} ORDER BY rowid");
 
         $rows = [];
-        if ($result instanceof ResultSetInterface) {
-            foreach ($result as $row) {
-                $cells = [];
-                foreach ((array) $row as $column => $value) {
-                    $cells[(string) $column] = is_scalar($value) ? (string) $value : null;
-                }
-
-                $rows[] = $cells;
+        foreach ($result as $row) {
+            $cells = [];
+            foreach ((array) $row as $column => $value) {
+                $cells[(string) $column] = is_scalar($value) ? (string) $value : null;
             }
+
+            $rows[] = $cells;
         }
 
         return $rows;

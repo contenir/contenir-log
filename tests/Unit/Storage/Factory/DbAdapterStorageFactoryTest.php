@@ -7,9 +7,9 @@ namespace Contenir\Log\Tests\Unit\Storage\Factory;
 use Contenir\Log\Storage\DbAdapterStorage;
 use Contenir\Log\Storage\Factory\DbAdapterStorageFactory;
 use Contenir\Log\Tests\TestAsset\ArrayContainer;
-use Laminas\Db\Adapter\Adapter;
-use Laminas\Db\Adapter\AdapterInterface;
 use Override;
+use PhpDb\Adapter\Adapter;
+use PhpDb\Adapter\AdapterInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -135,7 +135,7 @@ final class DbAdapterStorageFactoryTest extends TestCase
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
-            'contenir/contenir-log: db adapter service "broken" must implement Laminas\Db\Adapter\AdapterInterface.',
+            'contenir/contenir-log: db adapter service "broken" must implement PhpDb\Adapter\AdapterInterface.',
         );
 
         (new DbAdapterStorageFactory())($container);

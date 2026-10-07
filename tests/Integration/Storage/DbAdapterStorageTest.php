@@ -7,7 +7,6 @@ namespace Contenir\Log\Tests\Integration\Storage;
 use Contenir\Log\Storage\DbAdapterStorage;
 use Contenir\Log\Tests\TestAsset\LogRecordFactory;
 use Contenir\Log\Tests\TestAsset\SqliteLogDatabase;
-use Laminas\Db\Adapter\Adapter;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
@@ -21,9 +20,8 @@ final class DbAdapterStorageTest extends TestCase
     public function honoursACustomTableAndColumnMapIncludingLevelAndTimestamp(): void
     {
         $adapter = SqliteLogDatabase::adapter();
-        $adapter->query(
+        $adapter->executeQuery(
             'CREATE TABLE audit (msg TEXT, trace TEXT, lvl INTEGER, lvl_name TEXT, psr_level TEXT, logged_at TEXT)',
-            Adapter::QUERY_MODE_EXECUTE,
         );
 
         $storage = new DbAdapterStorage($adapter, 'audit', [
@@ -53,7 +51,7 @@ final class DbAdapterStorageTest extends TestCase
     public function ignoresMappedFieldsThatARecordDoesNotHave(): void
     {
         $adapter = SqliteLogDatabase::adapter();
-        $adapter->query('CREATE TABLE log (message TEXT)', Adapter::QUERY_MODE_EXECUTE);
+        $adapter->executeQuery('CREATE TABLE log (message TEXT)');
 
         (new DbAdapterStorage($adapter, 'log', ['channel' => 'channel', 'message' => 'message']))->store(
             LogRecordFactory::error(),
@@ -84,10 +82,7 @@ final class DbAdapterStorageTest extends TestCase
     public function routesContextEntriesListedAfterAnAbsentOne(): void
     {
         $adapter = SqliteLogDatabase::adapter();
-        $adapter->query(
-            'CREATE TABLE log (message TEXT, course_id INTEGER, student_id INTEGER)',
-            Adapter::QUERY_MODE_EXECUTE,
-        );
+        $adapter->executeQuery('CREATE TABLE log (message TEXT, course_id INTEGER, student_id INTEGER)');
 
         $storage = new DbAdapterStorage(
             $adapter,
@@ -110,7 +105,7 @@ final class DbAdapterStorageTest extends TestCase
     public function routesPresentContextEntriesToTheirColumns(): void
     {
         $adapter = SqliteLogDatabase::adapter();
-        $adapter->query('CREATE TABLE log (message TEXT, student_id INTEGER)', Adapter::QUERY_MODE_EXECUTE);
+        $adapter->executeQuery('CREATE TABLE log (message TEXT, student_id INTEGER)');
 
         $storage = new DbAdapterStorage($adapter, 'log', ['message' => 'message'], ['student' => 'student_id']);
         $storage->store(LogRecordFactory::error(

@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Contenir\Log\Storage;
 
 use Contenir\Log\LogRecord;
-use Laminas\Db\Adapter\AdapterInterface;
-use Laminas\Db\Sql\Sql;
 use Override;
+use PhpDb\Adapter\AdapterInterface;
+use PhpDb\Sql\Sql;
 
 use function array_key_exists;
 
 /**
- * Inserts each record into a database table via a Laminas DB adapter.
+ * Inserts each record into a database table via a phpdb adapter.
  *
  * The column map translates LogRecord fields to table columns, so sites with
  * differently-named log tables can remap without code changes. Fields omitted

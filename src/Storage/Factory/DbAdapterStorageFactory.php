@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Contenir\Log\Storage\Factory;
 
 use Contenir\Log\Storage\DbAdapterStorage;
-use Laminas\Db\Adapter\Adapter;
-use Laminas\Db\Adapter\AdapterInterface;
+use PhpDb\Adapter\Adapter;
+use PhpDb\Adapter\AdapterInterface;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use RuntimeException;

@@ -1,22 +1,29 @@
 # Upgrading from 0.x to 2.0
 
-2.0 has the same public API as 0.1.4. The platform requirement changes, and
-one behaviour is fixed.
+2.0 has the same public API as 0.1.4. The platform requirement changes, the
+database backend moves to php-db/phpdb, and one behaviour is fixed.
 
 | | 0.x | 2.0 |
 | --- | --- | --- |
 | PHP | ^8.1 | 8.3, 8.4 or 8.5 |
-| laminas/laminas-db | ^2.17 | ^2.19 |
+| laminas/laminas-db | ^2.17 | removed |
+| php-db/phpdb | n/a | 0.6.x-dev |
 | psr/log | ^1.0 \|\| ^2.0 \|\| ^3.0 | unchanged |
 | psr/container | ^1.0 \|\| ^2.0 | unchanged |
 
 To upgrade, update the constraint:
 
 ```bash
-composer require contenir/contenir-log:^2.0
+composer require contenir/contenir-log:^2.0@RC
 ```
 
-No code changes are needed. `Logger`, `LogRecord`, `Storage\StorageInterface`,
+The database backend now uses php-db/phpdb instead of laminas-db. If you use
+`DbAdapterStorage`, provide a `PhpDb\Adapter\AdapterInterface` (install the
+driver package for your database, e.g. `php-db/phpdb-sqlite`) and register it
+under `PhpDb\Adapter\Adapter`, or set `log.storage.options.adapter` to your
+service id. Applications using only `FilesystemStorage` need no code changes.
+
+`Logger`, `LogRecord`, `Storage\StorageInterface`,
 `Storage\FilesystemStorage`, `Storage\DbAdapterStorage`, the three factories,
 `ConfigProvider`, `Module` and the `log` configuration keep their signatures
 and behaviour.
